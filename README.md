@@ -29,8 +29,9 @@ claude -p "samples/02_회의록.txt 로 회의 결과 공유 발표자료 만들
   --allowedTools "Read,Glob,Grep,Skill,Bash(python:*),Edit(decks/**)"
 ```
 
-**끝나면 `verify.py` 로 확인한다.** 덱을 만든 세션이 검사기(`build.py`·`theme/`·`test_build.py`)를 고쳤는지 git 으로 대조하고,
-바뀌었으면 원본으로 되돌려 실패 처리한 뒤 원본 검사기로 다시 검사한다.
+**끝나면 `verify.py` 로 확인한다.** 작업 폴더는 덱을 만든 세션이 마음대로 고칠 수 있어서 믿지 않는다.
+GitHub 원본을 임시 폴더에 새로 받아, 덱의 `slides.html` 하나만 가져가 원본 검사기로 검사한다.
+작업 폴더의 검사기(`build.py`·`theme/`·`test_build.py`·`verify.py`)가 원본과 다르면 덮어쓰고 실패 처리한다.
 
 ```bash
 python verify.py decks/회의록 samples/02_회의록.txt
@@ -62,7 +63,7 @@ AI가 만든 발표자료에서 제일 무서운 건 그럴듯한 가짜 숫자�
 | `.claude/skills/make-deck/SKILL.md` | Claude가 따르는 규칙과 슬라이드 부품 |
 | `theme/` | 공통 테마(색·폰트는 `theme.css` 맨 위에서만 바꾼다), 넘김·차트 JS |
 | `build.py` | 조립 + PDF + 검사 |
-| `verify.py` | 세션이 끝난 뒤 검사기 무결성(git) 확인 + 재검사 |
+| `verify.py` | 세션이 끝난 뒤 GitHub 원본을 새로 받아 그쪽 검사기로 재검사 |
 | `samples/` | 예시 자료 4종 — **가상 회사 '예시랩'의 지어낸 데이터** |
 | `decks/` | 위 자료로 실제 만든 덱(HTML·PDF) |
 
