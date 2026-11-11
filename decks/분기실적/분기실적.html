@@ -1,0 +1,288 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>3분기 실적 리뷰</title><style>/* 예시랩 공통 테마 — 모든 덱이 이 파일 하나를 쓴다. 색·폰트는 :root 에서만 바꾼다. */
+:root {
+  --ink: #141a2b;
+  --muted: #687089;
+  --line: #e4e7ef;
+  --bg: #fbfbfd;
+  --card: #ffffff;
+  --soft: #eef2fe;
+  --brand: #2f5bea;
+  --brand-dark: #14215c;
+  --brand-2: #9db2f7;
+  --good: #12936a;
+  --bad: #d43f3f;
+  --font: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --company: "예시랩";
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { background: #0d1120; font-family: var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+h1, h2, .lead { text-wrap: balance; }
+p, li, td { text-wrap: pretty; }
+
+/* 슬라이드 한 장 = 1280x720 고정. 넘치면 잘린다(build.py 가 잡는다). */
+.slide {
+  width: 1280px; height: 720px; overflow: hidden; position: relative;
+  background: var(--bg); padding: 72px 88px 76px;
+  display: flex; flex-direction: column; gap: 26px;
+}
+/* 제목 아래 내용은 남은 공간 가운데로 — 내용이 적어도 위에 몰려 아래가 비지 않게 */
+.slide > h2 + * { margin-top: auto; }
+.slide > :last-child { margin-bottom: auto; }
+.slide > .chart:last-child { margin-bottom: 0; }
+
+/* 바닥 줄: 회사명 · 쪽/전체 (deck.js 가 data-n, data-total 을 매긴다) */
+.slide::after {
+  content: attr(data-n) " / " attr(data-total);
+  position: absolute; right: 88px; bottom: 30px;
+  font-size: 15px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.slide::before {
+  content: var(--company);
+  position: absolute; left: 88px; bottom: 30px;
+  font-size: 15px; font-weight: 800; color: var(--brand); letter-spacing: 0.5px;
+}
+
+h1 { font-size: 68px; line-height: 1.18; letter-spacing: -2px; font-weight: 800; }
+h2 { font-size: 42px; line-height: 1.25; letter-spacing: -1px; font-weight: 800; position: relative; padding-top: 22px; }
+h2::before { content: ""; position: absolute; left: 0; top: 0; width: 56px; height: 6px; border-radius: 3px; background: var(--brand); }
+h2 small { display: block; font-size: 19px; color: var(--muted); font-weight: 500; margin-top: 10px; letter-spacing: 0; }
+p, li { font-size: 25px; line-height: 1.55; }
+ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+ul li { position: relative; padding-left: 30px; }
+ul li::before { content: ""; position: absolute; left: 4px; top: 0.58em; width: 10px; height: 10px; border-radius: 3px; background: var(--brand); }
+b { font-weight: 800; }
+.muted { color: var(--muted); }
+.up { color: var(--good); }
+.down { color: var(--bad); }
+
+/* 표지: 짙은 남색 + 기하 장식 */
+.slide.cover {
+  background: radial-gradient(circle at 88% 18%, rgba(157,178,247,.35) 0 180px, transparent 181px),
+              radial-gradient(circle at 100% 100%, rgba(47,91,234,.55) 0 330px, transparent 331px),
+              var(--brand-dark);
+  color: #fff; justify-content: center; gap: 22px;
+}
+.slide.cover > * { margin: 0; max-width: 900px; }
+.slide.cover h1::before { content: ""; display: block; width: 72px; height: 8px; border-radius: 4px; background: var(--brand-2); margin-bottom: 34px; }
+.slide.cover p { font-size: 26px; color: #c3cdf2; }
+.slide.cover::before { color: #fff; }
+.slide.cover::after { color: #8f9bc9; }
+
+/* 한 줄 결론 강조 */
+.lead {
+  font-size: 30px; font-weight: 800; line-height: 1.45;
+  background: var(--soft); border-left: 8px solid var(--brand); border-radius: 0 14px 14px 0; padding: 22px 28px;
+}
+
+/* KPI 타일: <div class="kpis"><div><b>1,234</b><span>문의 건수</span></div>...</div> */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.kpis > div {
+  background: var(--card); border-radius: 18px; padding: 28px 30px 26px;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.06), 0 2px 4px rgba(20,26,43,.04), 0 12px 28px rgba(20,26,43,.07);
+}
+.kpis > div:first-child { background: var(--brand); color: #fff; box-shadow: 0 12px 28px rgba(47,91,234,.30); }
+.kpis > div:first-child span, .kpis > div:first-child i { color: #dbe3ff; }
+.kpis b { display: block; font-size: 52px; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.kpis span { font-size: 18px; color: var(--muted); line-height: 1.4; }
+.kpis i { font-style: normal; font-weight: 700; }
+
+/* 2단 */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+
+/* 표 */
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 21px; background: var(--card); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.07), 0 8px 20px rgba(20,26,43,.05); font-variant-numeric: tabular-nums; }
+th, td { padding: 14px 18px; text-align: left; }
+th { background: var(--brand-dark); color: #fff; font-weight: 700; font-size: 18px; }
+tr:nth-child(even) td { background: #f5f7fc; }
+td { border-top: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 차트 자리: deck.js 가 data-* 를 읽어 SVG 로 그린다 */
+.chart { flex: 1; min-height: 0; background: var(--card); border-radius: 18px; padding: 18px 24px 8px;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.06), 0 12px 28px rgba(20,26,43,.06); }
+.chart svg { width: 100%; height: 100%; overflow: visible; }
+.chart text { font-family: var(--font); fill: var(--muted); font-size: 17px; }
+.chart text.v { fill: var(--ink); font-weight: 800; }
+
+/* 타임라인/단계: <ol class="steps"><li><b>1주</b>설계</li>...</ol> */
+.steps { list-style: none; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; counter-reset: step; align-items: start; }
+.steps li { position: relative; padding: 56px 20px 0 0; font-size: 21px; line-height: 1.45; font-weight: 600; counter-increment: step; }
+.steps li::before { /* 번호 동그라미 */
+  content: counter(step); position: absolute; left: 0; top: 0; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--brand); color: #fff; font-size: 18px; font-weight: 800; display: grid; place-items: center; z-index: 1;
+}
+.steps li::after { /* 이어지는 선 */
+  content: ""; position: absolute; left: 0; right: 0; top: 18px; height: 3px; background: var(--brand-2);
+}
+.steps li:last-child::after { right: auto; width: 38px; }
+.steps b { display: block; color: var(--brand); font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+
+/* 발표 모드: 한 장씩, 화면에 맞춰 축소, 아래 진행 막대 */
+@media screen {
+  body { height: 100vh; overflow: hidden; display: grid; place-items: center; }
+  /* transform: scale 은 확대 시 SVG 글자 위치가 어긋나서(실측) zoom 으로 맞춘다 */
+  .slide { display: none; flex-shrink: 0; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .slide.on { display: flex; zoom: var(--fit, 1); }
+  .progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--brand); transition: width .25s; }
+}
+.progress { display: none; }
+@media screen { .progress { display: block; } }
+
+/* 인쇄(PDF): 전 슬라이드, 한 장 = 한 쪽 */
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { break-after: page; }
+  .kpis > div, .chart { box-shadow: none; }
+}
+</style></head><body><main class="deck"><section class="slide cover">
+  <h1>3분기 실적 리뷰</h1>
+  <p>2026-07 ~ 2026-09 · 작성 미정</p>
+</section>
+
+<section class="slide">
+  <h2>3분기 매출 <span data-calc="10240+10010+10690">30940</span>만원, 전분기보다 <span data-calc="((10240+10010+10690)-(9310+9580+9870))/(9310+9580+9870)*100">7.6%</span> 성장<small>2분기(4~6월) 대비 분기 합계</small></h2>
+  <div class="kpis">
+    <div><b data-calc="10240+10010+10690">30940</b><span>매출(만원) · 2분기 <i data-calc="9310+9580+9870">28760</i></span></div>
+    <div><b class="up" data-calc="((10240+10010+10690)-(9310+9580+9870))/(9310+9580+9870)*100">+7.6%</b><span>매출 증감</span></div>
+    <div><b data-calc="402+371+415">1188</b><span>신규고객 · 2분기 <i data-calc="341+329+368">1038</i></span></div>
+    <div><b>6291</b><span>9월말 활성고객 · 6월말 5416</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>매출은 9개월 내내 우상향, 8월만 <span data-calc="(10240-10010)/10240*100">2.2%</span> 주춤<small>월별 매출(만원)</small></h2>
+  <div class="chart" data-type="line" data-labels="1월|2월|3월|4월|5월|6월|7월|8월|9월"
+       data-values="8420|8150|9030|9310|9580|9870|10240|10010|10690" data-unit="만원"></div>
+  <p class="muted">9월 10690만원으로 연중 최고, 7월 10240만원을 넘어섬</p>
+</section>
+
+<section class="slide">
+  <h2>3분기 활성고객 <span data-calc="6291-5416">875</span>명 순증, <span data-calc="(6291-5416)/5416*100">16.2%</span> 늘어<small>월별 신규·해지 고객(명)</small></h2>
+  <div class="chart" data-type="bar" data-labels="1월|2월|3월|4월|5월|6월|7월|8월|9월"
+       data-values="312|287|356|341|329|368|402|371|415" data-values2="97|104|92|88|95|101|96|118|99"
+       data-series="신규|해지" data-unit="명"></div>
+  <p class="muted">순증 = 9월말 활성 6291 − 6월말 활성 5416</p>
+</section>
+
+<section class="slide">
+  <h2>8월 해지 118명, 9개월 중 최다<small>전월말 활성고객 대비 해지 비율</small></h2>
+  <div class="cols">
+    <table>
+      <tr><th>월</th><th class="num">해지</th><th class="num">전월말 활성</th><th class="num">해지율</th></tr>
+      <tr><td>7월</td><td class="num">96</td><td class="num">5416</td><td class="num" data-calc="96/5416*100">1.8%</td></tr>
+      <tr><td>8월</td><td class="num">118</td><td class="num">5722</td><td class="num" data-calc="118/5722*100">2.1%</td></tr>
+      <tr><td>9월</td><td class="num">99</td><td class="num">5975</td><td class="num" data-calc="99/5975*100">1.7%</td></tr>
+    </table>
+    <ul>
+      <li>8월은 매출도 유일하게 감소</li>
+      <li>신규도 8월 371명으로 7·9월보다 적음</li>
+      <li>9월엔 해지율 회복</li>
+      <li>8월 해지 원인: 자료 없음(미정)</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>마케팅비 <span data-calc="((1500+1450+1500)-(1300+1250+1400))/(1300+1250+1400)*100">12.7%</span> 늘고 신규는 <span data-calc="((402+371+415)-(341+329+368))/(341+329+368)*100">14.5%</span> 늘어<small>2분기 대비 3분기, 신규 1명당 마케팅비는 소폭 개선</small></h2>
+  <div class="cols">
+    <table>
+      <tr><th>항목</th><th class="num">2분기</th><th class="num">3분기</th></tr>
+      <tr><td>마케팅비(만원)</td><td class="num" data-calc="1300+1250+1400">3950</td><td class="num" data-calc="1500+1450+1500">4450</td></tr>
+      <tr><td>신규고객(명)</td><td class="num" data-calc="341+329+368">1038</td><td class="num" data-calc="402+371+415">1188</td></tr>
+      <tr><td>신규 1명당(만원)</td><td class="num" data-calc="(1300+1250+1400)/(341+329+368)">3.81</td><td class="num" data-calc="(1500+1450+1500)/(402+371+415)">3.75</td></tr>
+    </table>
+    <ul>
+      <li>마케팅비 1500만원인 7·9월에 신규 402·415명</li>
+      <li>8월은 1450만원에 신규 371명</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>결정할 것: 8월 해지 원인과 4분기 마케팅비</h2>
+  <table>
+    <tr><th>안건</th><th>근거</th><th>담당</th><th>기한</th></tr>
+    <tr><td>8월 해지 118명 원인 확인</td><td>9개월 중 해지 최다</td><td>미정</td><td>미정</td></tr>
+    <tr><td>4분기 마케팅비 수준 결정</td><td>3분기 증액분만큼 신규 증가</td><td>미정</td><td>미정</td></tr>
+    <tr><td>4분기 매출 목표 설정</td><td>3분기 매출 <span data-calc="((10240+10010+10690)-(9310+9580+9870))/(9310+9580+9870)*100">7.6%</span> 성장</td><td>미정</td><td>미정</td></tr>
+  </table>
+</section>
+</main><script>// 발표 넘김 + 차트 그리기. build.py 가 덱 HTML 안에 그대로 넣는다(외부 파일·CDN 없음).
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, text) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const list = s => s.split("|").map(x => x.trim());
+
+  // <div class="chart" data-type="bar|line" data-labels="월|화" data-values="120|98" [data-series="이번주|지난주" data-values2="..."] [data-unit="건"]>
+  document.querySelectorAll(".chart").forEach(c => {
+    const labels = list(c.dataset.labels);
+    const series = [list(c.dataset.values).map(Number)];
+    if (c.dataset.values2) series.push(list(c.dataset.values2).map(Number));
+    const unit = c.dataset.unit || "";
+    const colors = ["var(--brand)", "var(--brand-2)"];
+    const W = 1000, H = 400, L = 40, B = 40, T = 30;
+    const max = Math.max(...series.flat()) * 1.15 || 1;
+    const y = v => T + (H - T - B) * (1 - v / max);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "xMidYMid meet" });
+    [0.25, 0.5, 0.75].forEach(f => svg.append(el("line", { x1: L, x2: W, y1: y(max / 1.15 * f), y2: y(max / 1.15 * f), stroke: "var(--line)", "stroke-dasharray": "4 6" })));
+    svg.append(el("line", { x1: L, x2: W, y1: H - B, y2: H - B, stroke: "#c9cfdc", "stroke-width": 2 }));
+    const slot = (W - L) / labels.length;
+    labels.forEach((lb, i) => svg.append(el("text", { x: L + slot * (i + 0.5), y: H - 12, "text-anchor": "middle" }, lb)));
+
+    if (c.dataset.type === "line") {
+      series.slice().reverse().forEach((vals, r) => { // 두 번째 계열을 먼저 그려 첫 계열 라벨이 가려지지 않게
+        const s = series.length - 1 - r;
+        const pts = vals.map((v, i) => [L + slot * (i + 0.5), y(v)]);
+        svg.append(el("polyline", { points: pts.join(" "), fill: "none", stroke: colors[s], "stroke-width": 4 }));
+        pts.forEach(([px, py], i) => {
+          svg.append(el("circle", { cx: px, cy: py, r: 7, fill: "#fff", stroke: colors[s], "stroke-width": 4 }));
+          if (s === 0) svg.append(el("text", { x: px, y: py - 16, "text-anchor": "middle", class: "v" }, vals[i].toLocaleString() + unit));
+        });
+      });
+    } else {
+      const bw = slot * 0.6 / series.length;
+      series.forEach((vals, s) => vals.forEach((v, i) => {
+        const x = L + slot * i + slot * 0.2 + bw * s;
+        svg.append(el("rect", { x, y: y(v), width: bw - 6, height: H - B - y(v), rx: 6, fill: colors[s] }));
+        svg.append(el("text", { x: x + bw / 2 - 3, y: y(v) - 10, "text-anchor": "middle", class: s ? "" : "v" }, v.toLocaleString() + unit));
+      }));
+    }
+    if (c.dataset.series) list(c.dataset.series).forEach((nm, s) => {
+      svg.append(el("rect", { x: W - 220 + s * 110, y: 0, width: 14, height: 14, rx: 4, fill: colors[s] }));
+      svg.append(el("text", { x: W - 200 + s * 110, y: 13 }, nm));
+    });
+    c.append(svg);
+  });
+
+  // 발표 모드: ← → 스페이스로 넘김, 화면 크기에 맞춰 축소
+  const slides = [...document.querySelectorAll(".slide")];
+  slides.forEach((s, i) => { s.dataset.n = i + 1; s.dataset.total = slides.length; });
+  const bar = document.body.appendChild(document.createElement("div"));
+  bar.className = "progress";
+  let cur = Math.max(0, Number(location.hash.slice(1)) - 1 || 0);
+  const show = () => {
+    slides.forEach((s, i) => s.classList.toggle("on", i === cur));
+    bar.style.width = ((cur + 1) / slides.length) * 100 + "%";
+    document.documentElement.style.setProperty("--fit", Math.min(innerWidth / 1280, innerHeight / 720));
+    history.replaceState(null, "", "#" + (cur + 1));
+  };
+  addEventListener("keydown", e => {
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) cur = Math.min(cur + 1, slides.length - 1);
+    else if (["ArrowLeft", "PageUp"].includes(e.key)) cur = Math.max(cur - 1, 0);
+    else return;
+    e.preventDefault(); show();
+  });
+  addEventListener("click", () => { cur = Math.min(cur + 1, slides.length - 1); show(); });
+  addEventListener("resize", show);
+  show();
+})();
+</script></body></html>

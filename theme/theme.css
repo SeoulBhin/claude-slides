@@ -1,0 +1,140 @@
+/* 예시랩 공통 테마 — 모든 덱이 이 파일 하나를 쓴다. 색·폰트는 :root 에서만 바꾼다. */
+:root {
+  --ink: #141a2b;
+  --muted: #687089;
+  --line: #e4e7ef;
+  --bg: #fbfbfd;
+  --card: #ffffff;
+  --soft: #eef2fe;
+  --brand: #2f5bea;
+  --brand-dark: #14215c;
+  --brand-2: #9db2f7;
+  --good: #12936a;
+  --bad: #d43f3f;
+  --font: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --company: "예시랩";
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { background: #0d1120; font-family: var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+h1, h2, .lead { text-wrap: balance; }
+p, li, td { text-wrap: pretty; }
+
+/* 슬라이드 한 장 = 1280x720 고정. 넘치면 잘린다(build.py 가 잡는다). */
+.slide {
+  width: 1280px; height: 720px; overflow: hidden; position: relative;
+  background: var(--bg); padding: 72px 88px 76px;
+  display: flex; flex-direction: column; gap: 26px;
+}
+/* 제목 아래 내용은 남은 공간 가운데로 — 내용이 적어도 위에 몰려 아래가 비지 않게 */
+.slide > h2 + * { margin-top: auto; }
+.slide > :last-child { margin-bottom: auto; }
+.slide > .chart:last-child { margin-bottom: 0; }
+
+/* 바닥 줄: 회사명 · 쪽/전체 (deck.js 가 data-n, data-total 을 매긴다) */
+.slide::after {
+  content: attr(data-n) " / " attr(data-total);
+  position: absolute; right: 88px; bottom: 30px;
+  font-size: 15px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.slide::before {
+  content: var(--company);
+  position: absolute; left: 88px; bottom: 30px;
+  font-size: 15px; font-weight: 800; color: var(--brand); letter-spacing: 0.5px;
+}
+
+h1 { font-size: 68px; line-height: 1.18; letter-spacing: -2px; font-weight: 800; }
+h2 { font-size: 42px; line-height: 1.25; letter-spacing: -1px; font-weight: 800; position: relative; padding-top: 22px; }
+h2::before { content: ""; position: absolute; left: 0; top: 0; width: 56px; height: 6px; border-radius: 3px; background: var(--brand); }
+h2 small { display: block; font-size: 19px; color: var(--muted); font-weight: 500; margin-top: 10px; letter-spacing: 0; }
+p, li { font-size: 25px; line-height: 1.55; }
+ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+ul li { position: relative; padding-left: 30px; }
+ul li::before { content: ""; position: absolute; left: 4px; top: 0.58em; width: 10px; height: 10px; border-radius: 3px; background: var(--brand); }
+b { font-weight: 800; }
+.muted { color: var(--muted); }
+.up { color: var(--good); }
+.down { color: var(--bad); }
+
+/* 표지: 짙은 남색 + 기하 장식 */
+.slide.cover {
+  background: radial-gradient(circle at 88% 18%, rgba(157,178,247,.35) 0 180px, transparent 181px),
+              radial-gradient(circle at 100% 100%, rgba(47,91,234,.55) 0 330px, transparent 331px),
+              var(--brand-dark);
+  color: #fff; justify-content: center; gap: 22px;
+}
+.slide.cover > * { margin: 0; max-width: 900px; }
+.slide.cover h1::before { content: ""; display: block; width: 72px; height: 8px; border-radius: 4px; background: var(--brand-2); margin-bottom: 34px; }
+.slide.cover p { font-size: 26px; color: #c3cdf2; }
+.slide.cover::before { color: #fff; }
+.slide.cover::after { color: #8f9bc9; }
+
+/* 한 줄 결론 강조 */
+.lead {
+  font-size: 30px; font-weight: 800; line-height: 1.45;
+  background: var(--soft); border-left: 8px solid var(--brand); border-radius: 0 14px 14px 0; padding: 22px 28px;
+}
+
+/* KPI 타일: <div class="kpis"><div><b>1,234</b><span>문의 건수</span></div>...</div> */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.kpis > div {
+  background: var(--card); border-radius: 18px; padding: 28px 30px 26px;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.06), 0 2px 4px rgba(20,26,43,.04), 0 12px 28px rgba(20,26,43,.07);
+}
+.kpis > div:first-child { background: var(--brand); color: #fff; box-shadow: 0 12px 28px rgba(47,91,234,.30); }
+.kpis > div:first-child span, .kpis > div:first-child i { color: #dbe3ff; }
+.kpis b { display: block; font-size: 52px; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+.kpis span { font-size: 18px; color: var(--muted); line-height: 1.4; }
+.kpis i { font-style: normal; font-weight: 700; }
+
+/* 2단 */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+
+/* 표 */
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 21px; background: var(--card); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.07), 0 8px 20px rgba(20,26,43,.05); font-variant-numeric: tabular-nums; }
+th, td { padding: 14px 18px; text-align: left; }
+th { background: var(--brand-dark); color: #fff; font-weight: 700; font-size: 18px; }
+tr:nth-child(even) td { background: #f5f7fc; }
+td { border-top: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* 차트 자리: deck.js 가 data-* 를 읽어 SVG 로 그린다 */
+.chart { flex: 1; min-height: 0; background: var(--card); border-radius: 18px; padding: 18px 24px 8px;
+  box-shadow: 0 0 0 1px rgba(20,26,43,.06), 0 12px 28px rgba(20,26,43,.06); }
+.chart svg { width: 100%; height: 100%; overflow: visible; }
+.chart text { font-family: var(--font); fill: var(--muted); font-size: 17px; }
+.chart text.v { fill: var(--ink); font-weight: 800; }
+
+/* 타임라인/단계: <ol class="steps"><li><b>1주</b>설계</li>...</ol> */
+.steps { list-style: none; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; counter-reset: step; align-items: start; }
+.steps li { position: relative; padding: 56px 20px 0 0; font-size: 21px; line-height: 1.45; font-weight: 600; counter-increment: step; }
+.steps li::before { /* 번호 동그라미 */
+  content: counter(step); position: absolute; left: 0; top: 0; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--brand); color: #fff; font-size: 18px; font-weight: 800; display: grid; place-items: center; z-index: 1;
+}
+.steps li::after { /* 이어지는 선 */
+  content: ""; position: absolute; left: 0; right: 0; top: 18px; height: 3px; background: var(--brand-2);
+}
+.steps li:last-child::after { right: auto; width: 38px; }
+.steps b { display: block; color: var(--brand); font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+
+/* 발표 모드: 한 장씩, 화면에 맞춰 축소, 아래 진행 막대 */
+@media screen {
+  body { height: 100vh; overflow: hidden; display: grid; place-items: center; }
+  /* transform: scale 은 확대 시 SVG 글자 위치가 어긋나서(실측) zoom 으로 맞춘다 */
+  .slide { display: none; flex-shrink: 0; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .slide.on { display: flex; zoom: var(--fit, 1); }
+  .progress { position: fixed; left: 0; bottom: 0; height: 4px; background: var(--brand); transition: width .25s; }
+}
+.progress { display: none; }
+@media screen { .progress { display: block; } }
+
+/* 인쇄(PDF): 전 슬라이드, 한 장 = 한 쪽 */
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { break-after: page; }
+  .kpis > div, .chart { box-shadow: none; }
+}
