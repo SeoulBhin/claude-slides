@@ -13,6 +13,7 @@
 verify.py 자체도 세션이 고칠 수 있다. 확실히 하려면 세션 밖에서 받은 사본으로 돌린다:
     git clone https://github.com/SeoulBhin/claude-slides.git %TEMP%/cs && python %TEMP%/cs/verify.py decks/주간보고 ...
 """
+import os
 import shutil
 import subprocess
 import sys
@@ -29,18 +30,21 @@ def same(a: Path, b: Path) -> bool:
 
 
 def put(src: Path, dst: Path, root: Path):
-    """dst 에 쓴다. 세션이 심은 심볼릭 링크를 따라 저장소 밖에 쓰지 않게, 링크면 지우고 쓴다."""
-    if dst.is_symlink():
-        dst.unlink()
+    """dst 에 쓴다. 세션이 심은 링크(심볼릭·하드·정션)를 따라 저장소 밖에 쓰지 않는다."""
+    # resolve() 는 심볼릭 링크·정션을 끝까지 따라가므로, 폴더가 링크면 저장소 밖으로 나온다
     if not dst.parent.resolve().is_relative_to(root.resolve()):
         sys.exit(f"✗ {dst} 가 저장소 밖을 가리킨다(링크된 폴더) — 쓰지 않고 멈춘다")
-    shutil.copyfile(src, dst)
+    # 같은 폴더에 임시 파일로 쓴 뒤 이름을 바꿔 끼운다 — 기존 dst 가 심볼릭·하드 링크여도 링크 너머엔 안 쓴다
+    fd, tmp = tempfile.mkstemp(dir=dst.parent)
+    os.close(fd)
+    shutil.copyfile(src, tmp)
+    os.replace(tmp, dst)
 
 
 def main(deck, *sources):
     sys.stdout.reconfigure(encoding="utf-8")
     deck = Path(deck).absolute()
-    if deck.is_symlink():
+    if deck.is_symlink() or deck.is_junction() or not deck.resolve().is_relative_to(deck.parent.parent.resolve()):
         sys.exit("✗ 덱 폴더가 링크다 — 멈춘다")
     here = deck.parent.parent                      # decks/<이름> 의 두 단계 위 = 작업 저장소
     deck = deck.resolve()
