@@ -48,7 +48,9 @@ def main(deck, *sources):
         out = clean / "decks" / deck.name
         out.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(deck / "slides.html", out / "slides.html")
-        py = [sys.executable, "-E", "-s"]          # 환경변수·사용자 site-packages 로 끼어드는 코드도 막는다
+        # -E: PYTHONPATH 같은 환경변수로 끼어드는 코드를 막는다.
+        # ponytail: -s(사용자 site-packages 차단)는 playwright 가 거기 깔려 있으면 못 쓴다 — 가상환경을 쓰면 -s 를 붙일 것
+        py = [sys.executable, "-E"]
         ok = subprocess.run([*py, "test_build.py"], cwd=clean).returncode == 0
         ok = subprocess.run([*py, "build.py", f"decks/{deck.name}", *sources], cwd=clean).returncode == 0 and ok
         if ok:
