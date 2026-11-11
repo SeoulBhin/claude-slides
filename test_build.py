@@ -13,4 +13,11 @@ assert any("계산 불일치" in e for e in check_numbers('<b data-calc="142+128
 assert any("원본에 없음" in e for e in check_numbers('<b data-calc="142+999">1141</b>', SRC))
 # 걸림: 차트 data-values 에 지어낸 값
 assert check_numbers('<div class="chart" data-values="142|77"></div>', SRC) == ["원본에 없는 숫자: 77"]
+# 걸림: 스크립트·이벤트 속성 — 검사 뒤에 화면 숫자를 바꿀 수 있다
+assert any("쓸 수 없는 HTML" in e for e in check_numbers("<b>142</b><script>document.body.innerHTML='999'</script>", SRC))
+assert any("쓸 수 없는 HTML" in e for e in check_numbers('<img src=x onerror="alert(1)">', SRC))
+# 걸림: data-calc 요소에 맞는 숫자 옆으로 지어낸 숫자 끼워 넣기
+assert any("정확히 하나" in e for e in check_numbers('<b data-calc="142+128">270 (실제 999)</b>', SRC))
+# 걸림: 차트 라벨 같은 다른 data-* 속성의 지어낸 숫자
+assert check_numbers('<div class="chart" data-values="142" data-labels="77"></div>', SRC) == ["원본에 없는 숫자: 77"]
 print("ok")

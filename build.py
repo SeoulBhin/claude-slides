@@ -18,7 +18,8 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).parent
 NUM = re.compile(r"\d[\d,]*(?:\.\d+)?")
 CALC = re.compile(r'<(\w+)[^>]*\bdata-calc="([^"]+)"[^>]*>(.*?)</\1>', re.S)
-ATTR_VALUES = re.compile(r'data-values2?="([^"]+)"')
+ATTR_VALUES = re.compile(r'\bdata-(?!calc\b)[\w-]+="([^"]+)"')
+ACTIVE = re.compile(r"<\s*(?:script|style|iframe|object|embed|link|meta|svg)\b|\bon\w+\s*=|javascript:|\bstyle\s*=", re.I)
 
 
 def nums(text):
@@ -29,7 +30,8 @@ def nums(text):
 def check_numbers(slides, sources):
     # CSV 의 "142,131,38" 을 천 단위 콤마로 읽어 한 숫자로 붙이지 않게, 콤마를 구분자로 본 경우도 합친다
     src = nums(sources) | nums(sources.replace(",", " "))
-    errors = []
+    # 스크립트·스타일이 들어가면 검사가 끝난 뒤 화면 숫자를 바꿀 수 있다 — 슬라이드는 정적 HTML 만
+    errors = [f"슬라이드에 쓸 수 없는 HTML: {m!r}" for m in sorted(set(ACTIVE.findall(slides)))]
     for _, formula, shown in CALC.findall(slides):
         formula = html.unescape(formula)
         for n in nums(formula) - src - {"100"}:  # 100 은 백분율 환산 상수
@@ -39,16 +41,17 @@ def check_numbers(slides, sources):
             continue
         # 위 fullmatch 로 숫자·사칙연산·괄호만 남겼으니 eval 해도 코드는 못 돈다
         got = eval(formula.replace(",", ""), {"__builtins__": {}})
-        m = NUM.search(re.sub(r"<[^>]+>", "", shown))
-        if not m:
-            errors.append(f"data-calc 요소에 숫자가 없음: {shown!r}")
+        found = NUM.findall(re.sub(r"<[^>]+>", "", shown))
+        if len(found) != 1:  # 첫 숫자만 맞추고 옆에 다른 숫자를 끼워 넣는 걸 막는다
+            errors.append(f"data-calc 요소에는 숫자가 정확히 하나여야 함: {shown!r}")
             continue
-        val = m.group().replace(",", "")
+        val = found[0].replace(",", "")
         digits = len(val.split(".")[1]) if "." in val else 0
         # ponytail: 부호는 화살표·+/- 로 따로 표시하므로 절댓값만 비교
         if abs(round(abs(got), digits) - float(val)) > 1e-9:
             errors.append(f"계산 불일치: {formula} = {got:.4f} 인데 덱에는 {val}")
     rest = CALC.sub("", slides)
+    # data-values 만이 아니라 화면에 쓰일 수 있는 모든 data-* 속성(라벨·단위 등)의 숫자도 본다
     values = " ".join(v.replace("|", " ") for v in ATTR_VALUES.findall(rest))
     text = html.unescape(re.sub(r"<[^>]+>", " ", rest))
     for n in sorted(nums(text + " " + values) - src):
