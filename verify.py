@@ -2,44 +2,58 @@
 
     python verify.py decks/주간보고 samples/01_주간보고.csv samples/01_주간보고_메모.txt
 
-1. 검사기(build.py·theme/·test_build.py)가 원격(GitHub)에 올라간 것과 같은지 git 으로 본다.
-   바뀌었으면 원본으로 되돌리고 실패 처리한다 — 덱 만든 세션이 검사기를 고쳤다는 뜻이라서.
-   덱 폴더 밖에 다른 파일이 바뀌거나 생겼으면 아무것도 실행하지 않고 멈춘다.
-2. 원본 검사기로 test_build.py 와 build.py 를 다시 돌린다.
+작업 폴더는 덱 만든 세션이 마음대로 고칠 수 있다(파일·커밋·git 설정·훅·.gitignore 까지).
+그래서 작업 폴더의 검사기는 믿지 않는다.
 
---allowedTools 는 "묻지 않고 허용할 목록"이지 칸막이가 아니다(auto 모드에선 목록 밖 편집도 된다).
-그래서 막는 대신 끝난 뒤 코드로 확인한다.
+1. GitHub 원본 저장소(REPO)를 임시 폴더에 새로 받는다. 작업 폴더의 git 설정·훅은 타지 않는다.
+2. 작업 폴더 검사기(build.py·test_build.py·verify.py·theme/)가 원본과 다르면 원본으로 덮어쓰고 실패 처리한다.
+3. 덱의 slides.html 한 파일만 원본 쪽에 복사해서, 원본 검사기로 test_build.py 와 build.py 를 돌린다.
+   통과하면 만들어진 html·pdf 를 덱 폴더로 가져온다.
+
+verify.py 자체도 세션이 고칠 수 있다. 확실히 하려면 세션 밖에서 받은 사본으로 돌린다:
+    git clone https://github.com/SeoulBhin/claude-slides.git %TEMP%/cs && python %TEMP%/cs/verify.py decks/주간보고 ...
 """
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).parent
-GUARDED = ["build.py", "theme", "test_build.py", "verify.py"]
+REPO = "https://github.com/SeoulBhin/claude-slides.git"
+CHECKER = ["build.py", "test_build.py", "verify.py", "theme/theme.css", "theme/deck.js"]
+# ponytail: 세션이 GitHub 에 push 까지 하면 원본도 바뀐다. 그것까지 막으려면 믿는 커밋 해시를 저장소 밖에 적어 두고 대조할 것
 
 
-def main(*args):
+def same(a: Path, b: Path) -> bool:
+    return a.exists() and a.read_bytes().replace(b"\r\n", b"\n") == b.read_bytes().replace(b"\r\n", b"\n")
+
+
+def main(deck, *sources):
     sys.stdout.reconfigure(encoding="utf-8")
-    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
-    # 기준은 HEAD 가 아니라 원격(@{u}) — 세션이 고친 걸 커밋해 버리면 HEAD 와의 diff 는 비어 버린다.
-    # ponytail: 세션이 git push 까지 하면 원격도 바뀐다. 그것까지 막으려면 기준 커밋 해시를 저장소 밖에 둘 것
-    base = "@{u}"
-    if git("rev-parse", "--verify", "-q", base).returncode:
-        sys.exit("✗ 원격 추적 브랜치가 없다 — 검사기 원본을 비교할 기준이 없다")
-    # decks/ 밖의 변경·새 파일은 전부 실패. 루트에 json.py 같은 파일을 심으면 아래에서 파이썬을 돌릴 때 그 코드가 실행된다
-    status = git("status", "--porcelain", "--untracked-files=all").stdout.splitlines()
-    outside = sorted({ln[3:].strip('"') for ln in status if not ln[3:].strip('"').startswith("decks/")}
-                     | {p for p in git("diff", "--name-only", base, "HEAD").stdout.split() if not p.startswith("decks/")})
-    stray = [p for p in outside if not any(p == g or p.startswith(g + "/") for g in GUARDED)]
-    if stray:
-        sys.exit(f"✗ 덱 폴더 밖에 바뀌거나 생긴 파일이 있다: {', '.join(stray)} — 아무것도 실행하지 않고 멈춘다")
-    changed = [p for p in outside if p not in stray]
-    if changed:
-        print("✗ 검사기가 바뀌었다:", ", ".join(changed), "→ 원격 원본으로 되돌린다", flush=True)
-        git("checkout", base, "--", *GUARDED)
-    py = sys.executable
-    ok = subprocess.run([py, "test_build.py"], cwd=ROOT).returncode == 0
-    ok = subprocess.run([py, "build.py", *args], cwd=ROOT).returncode == 0 and ok
+    deck = Path(deck).resolve()
+    here = deck.parent.parent                      # decks/<이름> 의 두 단계 위 = 작업 저장소
+    sources = [str(Path(p).resolve()) for p in sources]
+    with tempfile.TemporaryDirectory() as tmp:
+        clean = Path(tmp) / "repo"
+        r = subprocess.run(["git", "-c", "core.hooksPath=", "clone", "-q", "--depth", "1", REPO, str(clean)],
+                           cwd=tmp, capture_output=True, text=True, encoding="utf-8")
+        if r.returncode:
+            sys.exit("✗ 원본 저장소를 받지 못했다: " + r.stderr.strip())
+        changed = [f for f in CHECKER if not same(here / f, clean / f)]
+        if changed:
+            print("✗ 검사기가 바뀌었다:", ", ".join(changed), "→ 원본으로 덮어쓴다", flush=True)
+            for f in changed:
+                (here / f).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(clean / f, here / f)
+        out = clean / "decks" / deck.name
+        out.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(deck / "slides.html", out / "slides.html")
+        py = [sys.executable, "-E", "-s"]          # 환경변수·사용자 site-packages 로 끼어드는 코드도 막는다
+        ok = subprocess.run([*py, "test_build.py"], cwd=clean).returncode == 0
+        ok = subprocess.run([*py, "build.py", f"decks/{deck.name}", *sources], cwd=clean).returncode == 0 and ok
+        if ok:
+            for f in out.glob(f"{deck.name}.*"):
+                shutil.copyfile(f, deck / f.name)
     return 0 if ok and not changed else 1
 
 
