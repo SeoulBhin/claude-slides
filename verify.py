@@ -28,10 +28,22 @@ def same(a: Path, b: Path) -> bool:
     return a.exists() and a.read_bytes().replace(b"\r\n", b"\n") == b.read_bytes().replace(b"\r\n", b"\n")
 
 
+def put(src: Path, dst: Path, root: Path):
+    """dst 에 쓴다. 세션이 심은 심볼릭 링크를 따라 저장소 밖에 쓰지 않게, 링크면 지우고 쓴다."""
+    if dst.is_symlink():
+        dst.unlink()
+    if not dst.parent.resolve().is_relative_to(root.resolve()):
+        sys.exit(f"✗ {dst} 가 저장소 밖을 가리킨다(링크된 폴더) — 쓰지 않고 멈춘다")
+    shutil.copyfile(src, dst)
+
+
 def main(deck, *sources):
     sys.stdout.reconfigure(encoding="utf-8")
-    deck = Path(deck).resolve()
+    deck = Path(deck).absolute()
+    if deck.is_symlink():
+        sys.exit("✗ 덱 폴더가 링크다 — 멈춘다")
     here = deck.parent.parent                      # decks/<이름> 의 두 단계 위 = 작업 저장소
+    deck = deck.resolve()
     sources = [str(Path(p).resolve()) for p in sources]
     with tempfile.TemporaryDirectory() as tmp:
         clean = Path(tmp) / "repo"
@@ -44,18 +56,22 @@ def main(deck, *sources):
             print("✗ 검사기가 바뀌었다:", ", ".join(changed), "→ 원본으로 덮어쓴다", flush=True)
             for f in changed:
                 (here / f).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(clean / f, here / f)
+                put(clean / f, here / f, here)
+        slides = deck / "slides.html"
+        if slides.is_symlink() or not slides.resolve().is_relative_to(deck):
+            sys.exit("✗ slides.html 이 링크다(덱 폴더 밖 파일을 읽게 할 수 있다) — 멈춘다")
         out = clean / "decks" / deck.name
         out.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(deck / "slides.html", out / "slides.html")
-        # -E: PYTHONPATH 같은 환경변수로 끼어드는 코드를 막는다.
-        # ponytail: -s(사용자 site-packages 차단)는 playwright 가 거기 깔려 있으면 못 쓴다 — 가상환경을 쓰면 -s 를 붙일 것
+        shutil.copyfile(slides, out / "slides.html")
+        # -E: PYTHONPATH 같은 환경변수로 끼어드는 코드를 막는다. -s·-I 는 안 쓴다(playwright 가 사용자 site-packages 에 있음).
+        # 한계: 덱 세션은 같은 Windows 사용자로 돈다. 사용자 site-packages·python.exe·브라우저 캐시를 고칠 수 있는 세션이면
+        # 어떤 플래그로도 못 막는다 — 그 수준은 세션을 다른 계정·샌드박스에서 돌려서 막을 일이다
         py = [sys.executable, "-E"]
         ok = subprocess.run([*py, "test_build.py"], cwd=clean).returncode == 0
         ok = subprocess.run([*py, "build.py", f"decks/{deck.name}", *sources], cwd=clean).returncode == 0 and ok
         if ok:
             for f in out.glob(f"{deck.name}.*"):
-                shutil.copyfile(f, deck / f.name)
+                put(f, deck / f.name, here)
     return 0 if ok and not changed else 1
 
 
